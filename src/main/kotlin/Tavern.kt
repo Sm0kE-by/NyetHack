@@ -107,3 +107,4 @@ private fun displayPatronBalances(patronGold: Map<String, Double>) {
         narrate("$patron has ${"%.2f".format(balance)} gold")
     }
 }
+
