@@ -1,5 +1,7 @@
 package org.example
 
+import kotlin.random.Random
+import kotlin.random.nextInt
 import java.io.File
 
 private const val TAVERN_MASTER = "Taernyl"
@@ -8,22 +10,15 @@ private const val TAVERN_NAME = "$TAVERN_MASTER's Folly"
 private val firstNames = setOf("Alex", "Mordoc", "Sophie", "Tariq")
 private val lastNames = setOf("Ironfoot", "Fernsworth", "Baggins", "Downstrider")
 
+private val menuDataFoePrint = File("data/tavern-menu-items.txt").readText().split("\n")
 private val menuData = File("data/tavern-menu-items.txt")
     .readText()
     .split("\n")
+    .map { it.split(",") }
 
-private val menuItems = List(menuData.size) { index ->
-    val (_, name, _) = menuData[index].split(",")
-    name
-}
-private val menuItemPrices: Map<String, Double> = List(menuData.size) { index ->
-    val (_, name, price) = menuData[index].split(",")
-    name to price.toDouble()
-}.toMap()
-private val menuItemTypes: Map<String, String> = List(menuData.size) { index ->
-    val (type, name, _) = menuData[index].split(",")
-    name to type
-}.toMap()
+private val menuItems = menuData.map { (_, name, _) -> name }
+private val menuItemPrices = menuData.associate { (_, name, price) -> name to price.toDouble() }
+private val menuItemTypes = menuData.associate { (type, name, _) -> name to type }
 
 fun visitTavern() {
     narrate("$heroName enters $TAVERN_NAME")
@@ -31,18 +26,26 @@ fun visitTavern() {
     //joinToString выполняет конкатенацию всех элементов в коллекции и разделяет их запятыми
     narrate(menuItems.joinToString())
 
-    val patrons: MutableSet<String> = mutableSetOf()
-    val patronGold = mutableMapOf(TAVERN_MASTER to 86.00, heroName to 4.50)
+    //создаем случайных посетителей, при объединении списков через ЗИП - берется список длинной наименьшего входящего списка,
+    // т.к. мы возвращаем коллекцию из 4 элементов а в СЕТ елементы не могут повторяться, все значения будут уникальными
+    val patrons: MutableSet<String> =
+        firstNames.shuffled().zip(lastNames.shuffled()) { firstName, lastName -> "$firstName $lastName" }.toMutableSet()
 
-    while (patrons.size < 5) {
-        val patronName = "${firstNames.random()} ${lastNames.random()}"
-        patrons += patronName
-        patronGold += patronName to 6.0
-    }
-
+    //Вместо этого необходимо распаковать значения из коллекции в отдельные аргументы. Для этого мы воспользовались оператором распаковки (*). С оператором распаковки элементы коллекции
+    //рассматриваются как отдельные параметры функции получающей переменное количество аргументов. Одно из ограничений оператора распаковки заключается в том, что он
+    //работает только с Array, этим и объясняется необходимость также вызывать toTypedArray. И хотя применение оператора распаковки ограничивается очень узкой нишей, он весьма
+    //удобен, когда возникает необходимость строить коллекции подобным способом.
+    val patronGold = mutableMapOf(TAVERN_MASTER to 86.00, heroName to 4.50, *patrons.map {
+        it to 6.00
+    }.toTypedArray())
 
     narrate("\n$heroName sees several patrons in the tavern:")
     narrate(patrons.joinToString())
+
+    //Выбираем случайное блюдо дня
+    val itemOfDay = patrons.flatMap { getFavoriteMenuItems(it) }.random()
+
+    narrate("The item of the day is the \"$itemOfDay\"\n")
     println(patronGold)
 
     repeat(3) {
@@ -50,7 +53,33 @@ fun visitTavern() {
     }
 
     displayPatronBalances(patronGold)
-    printMenu(menuData, menuItems.maxOf { it.length })
+
+    //Выгоняем посетителей у которых баланс составляет меньше 4 монет
+    val departingPatrons: List<String> = patrons.filter { patron -> patronGold.getOrDefault(patron, 0.0) < 4.0 }
+    patrons -= departingPatrons.toSet()
+    patronGold -= departingPatrons.toSet()
+    departingPatrons.forEach { patron ->
+        narrate("\n$heroName sees $patron departing the tavern")
+    }
+    narrate("There are still some patrons in the tavern")
+    narrate(patrons.joinToString())
+
+    printMenu(menuDataFoePrint, menuItems.maxOf { it.length })
+}
+
+/**
+ * Возвращаем список случайных любимых блюд для каждого посетителя
+ */
+private fun getFavoriteMenuItems(patron: String): List<String> {
+    return when (patron) {
+//Для Alex Ironfoot любимые блюда - все десерты
+        "Alex Ironfoot" -> menuItems.filter { menuItem ->
+            menuItemTypes[menuItem]?.contains("dessert") == true
+        }
+//для остальных - перемешиваем список блюд и берем случайное количество 1 или 2 первых блюда
+        else ->
+            menuItems.shuffled().take(Random.nextInt(1..2))
+    }
 }
 
 private fun placeOrder(patronName: String, menuItemName: String, patronGold: MutableMap<String, Double>) {
