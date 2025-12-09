@@ -20,6 +20,7 @@ private val menuItems = menuData.map { (_, name, _) -> name }
 private val menuItemPrices = menuData.associate { (_, name, price) -> name to price.toDouble() }
 private val menuItemTypes = menuData.associate { (type, name, _) -> name to type }
 
+
 fun visitTavern() {
     narrate("$heroName enters $TAVERN_NAME")
     narrate("\nThere are several items for sale:")
