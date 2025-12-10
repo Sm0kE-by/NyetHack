@@ -1,4 +1,4 @@
-package org.example
+package org.example.com.bignerdranch.nyethack
 
 import kotlin.random.Random
 import kotlin.random.nextInt

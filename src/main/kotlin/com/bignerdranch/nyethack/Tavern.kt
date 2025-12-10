@@ -1,4 +1,4 @@
-package org.example
+package org.example.com.bignerdranch.nyethack
 
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -22,7 +22,8 @@ private val menuItemTypes = menuData.associate { (type, name, _) -> name to type
 
 
 fun visitTavern() {
-    narrate("$heroName enters $TAVERN_NAME")
+
+    narrate("${player.name} enters $TAVERN_NAME")
     narrate("\nThere are several items for sale:")
     //joinToString выполняет конкатенацию всех элементов в коллекции и разделяет их запятыми
     narrate(menuItems.joinToString())
@@ -36,11 +37,11 @@ fun visitTavern() {
     //рассматриваются как отдельные параметры функции получающей переменное количество аргументов. Одно из ограничений оператора распаковки заключается в том, что он
     //работает только с Array, этим и объясняется необходимость также вызывать toTypedArray. И хотя применение оператора распаковки ограничивается очень узкой нишей, он весьма
     //удобен, когда возникает необходимость строить коллекции подобным способом.
-    val patronGold = mutableMapOf(TAVERN_MASTER to 86.00, heroName to 4.50, *patrons.map {
+    val patronGold = mutableMapOf(TAVERN_MASTER to 86.00, player.name to 4.50, *patrons.map {
         it to 6.00
     }.toTypedArray())
 
-    narrate("\n$heroName sees several patrons in the tavern:")
+    narrate("\n${player.name} sees several patrons in the tavern:")
     narrate(patrons.joinToString())
 
     //Выбираем случайное блюдо дня
@@ -62,7 +63,7 @@ fun visitTavern() {
             patronGold -= departingPatrons.toSet()
         }
         .forEach { patron ->
-            narrate("\n$heroName sees $patron departing the tavern")
+            narrate("\n${player.name} sees $patron departing the tavern")
         }
     narrate("There are still some patrons in the tavern")
     narrate(patrons.joinToString())
@@ -134,7 +135,7 @@ private fun printMenu(menu: List<String>, maximumDrinkLength: Int) {
 
 private fun displayPatronBalances(patronGold: Map<String, Double>) {
     println()
-    narrate("$heroName intuitively knows how much money each patron has")
+    narrate("${player.name} intuitively knows how much money each patron has")
     patronGold.forEach { (patron, balance) ->
         narrate("$patron has ${"%.2f".format(balance)} gold")
     }
