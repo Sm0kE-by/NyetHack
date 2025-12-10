@@ -56,12 +56,14 @@ fun visitTavern() {
     displayPatronBalances(patronGold)
 
     //Выгоняем посетителей у которых баланс составляет меньше 4 монет
-    val departingPatrons: List<String> = patrons.filter { patron -> patronGold.getOrDefault(patron, 0.0) < 4.0 }
-    patrons -= departingPatrons.toSet()
-    patronGold -= departingPatrons.toSet()
-    departingPatrons.forEach { patron ->
-        narrate("\n$heroName sees $patron departing the tavern")
-    }
+    patrons.filter { patron -> patronGold.getOrDefault(patron, 0.0) < 4.0 }
+        .also { departingPatrons ->
+            patrons -= departingPatrons.toSet()
+            patronGold -= departingPatrons.toSet()
+        }
+        .forEach { patron ->
+            narrate("\n$heroName sees $patron departing the tavern")
+        }
     narrate("There are still some patrons in the tavern")
     narrate(patrons.joinToString())
 
