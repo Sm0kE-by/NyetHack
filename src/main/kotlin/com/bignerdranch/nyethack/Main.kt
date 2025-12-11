@@ -1,5 +1,8 @@
 package org.example.com.bignerdranch.nyethack
 
+import com.bignerdranch.nyethack.Room
+import com.bignerdranch.nyethack.TownSquare
+
 lateinit var player : Player
 
 fun main() {
@@ -8,11 +11,17 @@ fun main() {
     player = Player(playerName)
 // changeNarratorMood()
     player.prophesize()
+
+    var currentRoom: Room = Tavern()
+
     val mortality = if (player.isImmortal) "an immortal" else "a mortal"
-    narrate("${player.name}, ${player.title}, heads to the town square")
+    println()
+    narrate("${player.name}, ${player.title} is in ${currentRoom.description()}")
     narrate("${player.name}, $mortality, has ${player.healthPoints} health points")
 
-    visitTavern()
+    currentRoom.enterRoom()
+
+
     println()
     player.castFireball()
     player.prophesize()

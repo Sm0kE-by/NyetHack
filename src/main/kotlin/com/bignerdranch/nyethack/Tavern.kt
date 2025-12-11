@@ -1,5 +1,6 @@
 package org.example.com.bignerdranch.nyethack
 
+import com.bignerdranch.nyethack.Room
 import kotlin.random.Random
 import kotlin.random.nextInt
 import java.io.File
@@ -20,55 +21,83 @@ private val menuItems = menuData.map { (_, name, _) -> name }
 private val menuItemPrices = menuData.associate { (_, name, price) -> name to price.toDouble() }
 private val menuItemTypes = menuData.associate { (type, name, _) -> name to type }
 
-
-fun visitTavern() {
-
-    narrate("${player.name} enters $TAVERN_NAME")
-    narrate("\nThere are several items for sale:")
-    //joinToString выполняет конкатенацию всех элементов в коллекции и разделяет их запятыми
-    narrate(menuItems.joinToString())
+class Tavern : Room(TAVERN_NAME) {
 
     //создаем случайных посетителей, при объединении списков через ЗИП - берется список длинной наименьшего входящего списка,
     // т.к. мы возвращаем коллекцию из 4 элементов а в СЕТ елементы не могут повторяться, все значения будут уникальными
     val patrons: MutableSet<String> =
-        firstNames.shuffled().zip(lastNames.shuffled()) { firstName, lastName -> "$firstName $lastName" }.toMutableSet()
-
+        firstNames.shuffled()
+            .zip(lastNames.shuffled()) { firstName,
+                                         lastName ->
+                "$firstName $lastName"
+            }
+            .toMutableSet()
     //Вместо этого необходимо распаковать значения из коллекции в отдельные аргументы. Для этого мы воспользовались оператором распаковки (*). С оператором распаковки элементы коллекции
     //рассматриваются как отдельные параметры функции получающей переменное количество аргументов. Одно из ограничений оператора распаковки заключается в том, что он
     //работает только с Array, этим и объясняется необходимость также вызывать toTypedArray. И хотя применение оператора распаковки ограничивается очень узкой нишей, он весьма
     //удобен, когда возникает необходимость строить коллекции подобным способом.
-    val patronGold = mutableMapOf(TAVERN_MASTER to 86.00, player.name to 4.50, *patrons.map {
-        it to 6.00
-    }.toTypedArray())
 
-    narrate("\n${player.name} sees several patrons in the tavern:")
-    narrate(patrons.joinToString())
-
+    val patronGold: MutableMap<String, Double> =
+        mutableMapOf(
+            TAVERN_MASTER to 86.00,
+            player.name to 4.50,
+            *patrons.map { it to 6.00 }.toTypedArray()
+        )
     //Выбираем случайное блюдо дня
     val itemOfDay = patrons.flatMap { getFavoriteMenuItems(it) }.random()
+    override val status = "Busy"
+    override fun enterRoom() {
+        narrate("${player.name} enters $TAVERN_NAME")
+        narrate("\nThere are several items for sale:")
+        //joinToString выполняет конкатенацию всех элементов в коллекции и разделяет их запятыми
+        narrate(menuItems.joinToString())
+        narrate("The item of the day is the $itemOfDay")
+        narrate("\n${player.name} sees several patrons in the tavern:")
+        narrate(patrons.joinToString())
 
-    narrate("The item of the day is the \"$itemOfDay\"\n")
-    println(patronGold)
+        println(patronGold)
 
-    repeat(3) {
-        placeOrder(patrons.random(), menuItems.random(), patronGold)
+            placeOrder(patrons.random(), menuItems.random())
+
+
+//        displayPatronBalances(patronGold)
+
+        //Выгоняем посетителей у которых баланс составляет меньше 4 монет
+//        patrons.filter { patron -> patronGold.getOrDefault(patron, 0.0) < 4.0 }
+//            .also { departingPatrons ->
+//                patrons -= departingPatrons.toSet()
+//                patronGold -= departingPatrons.toSet()
+//            }
+//            .forEach { patron ->
+//                narrate("\n${player.name} sees $patron departing the tavern")
+//            }
+//        narrate("There are still some patrons in the tavern")
+//        narrate(patrons.joinToString())
+
+//        printMenu(menuDataFoePrint, menuItems.maxOf { it.length })
     }
 
-    displayPatronBalances(patronGold)
+    private fun placeOrder(patronName: String, menuItemName: String) {
+        val itemPrice = menuItemPrices.getValue(menuItemName)
 
-    //Выгоняем посетителей у которых баланс составляет меньше 4 монет
-    patrons.filter { patron -> patronGold.getOrDefault(patron, 0.0) < 4.0 }
-        .also { departingPatrons ->
-            patrons -= departingPatrons.toSet()
-            patronGold -= departingPatrons.toSet()
-        }
-        .forEach { patron ->
-            narrate("\n${player.name} sees $patron departing the tavern")
-        }
-    narrate("There are still some patrons in the tavern")
-    narrate(patrons.joinToString())
+        narrate("$patronName speaks with $TAVERN_MASTER to place an order")
 
-    printMenu(menuDataFoePrint, menuItems.maxOf { it.length })
+        if (itemPrice <= patronGold.getOrDefault(patronName, 0.0)) {
+
+            val action = when (menuItemTypes[menuItemName]) {
+                "shandy", "elixir" -> "pours"
+                "meal" -> "serves"
+                else -> "hands"
+            }
+            narrate("$TAVERN_MASTER $action $patronName a $menuItemName")
+            narrate("$patronName pays $TAVERN_MASTER $itemPrice gold")
+
+            patronGold[patronName] = patronGold.getValue(patronName) - itemPrice
+            patronGold[TAVERN_MASTER] = patronGold.getValue(TAVERN_MASTER) + itemPrice
+        } else {
+            narrate("$TAVERN_MASTER says, \"You need more coin for a $menuItemName\"")
+        }
+    }
 }
 
 /**
@@ -83,28 +112,6 @@ private fun getFavoriteMenuItems(patron: String): List<String> {
 //для остальных - перемешиваем список блюд и берем случайное количество 1 или 2 первых блюда
         else ->
             menuItems.shuffled().take(Random.nextInt(1..2))
-    }
-}
-
-private fun placeOrder(patronName: String, menuItemName: String, patronGold: MutableMap<String, Double>) {
-    val itemPrice = menuItemPrices.getValue(menuItemName)
-
-    narrate("$patronName speaks with $TAVERN_MASTER to place an order")
-
-    if (itemPrice <= patronGold.getOrDefault(patronName, 0.0)) {
-
-        val action = when (menuItemTypes[menuItemName]) {
-            "shandy", "elixir" -> "pours"
-            "meal" -> "serves"
-            else -> "hands"
-        }
-        narrate("$TAVERN_MASTER $action $patronName a $menuItemName")
-        narrate("$patronName pays $TAVERN_MASTER $itemPrice gold")
-
-        patronGold[patronName] = patronGold.getValue(patronName) - itemPrice
-        patronGold[TAVERN_MASTER] = patronGold.getValue(TAVERN_MASTER) + itemPrice
-    } else {
-        narrate("$TAVERN_MASTER says, \"You need more coin for a $menuItemName\"")
     }
 }
 
@@ -133,11 +140,11 @@ private fun printMenu(menu: List<String>, maximumDrinkLength: Int) {
     }
 }
 
-private fun displayPatronBalances(patronGold: Map<String, Double>) {
-    println()
-    narrate("${player.name} intuitively knows how much money each patron has")
-    patronGold.forEach { (patron, balance) ->
-        narrate("$patron has ${"%.2f".format(balance)} gold")
-    }
-}
+//private fun displayPatronBalances(patronGold: Map<String, Double>) {
+//    println()
+//    narrate("${player.name} intuitively knows how much money each patron has")
+//    patronGold.forEach { (patron, balance) ->
+//        narrate("$patron has ${"%.2f".format(balance)} gold")
+//    }
+//}
 
