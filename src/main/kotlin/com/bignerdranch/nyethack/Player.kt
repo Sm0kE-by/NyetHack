@@ -1,6 +1,7 @@
 package org.example.com.bignerdranch.nyethack
 
 import com.bignerdranch.nyethack.Fightable
+import com.bignerdranch.nyethack.Loot
 
 class Player(
     initialName: String,
@@ -35,6 +36,9 @@ class Player(
             "best the world-eater"
         ).random()
     }
+
+    val inventory = mutableListOf<Loot>()
+    var gold = 0
 
     init {
         require(healthPoints > 0) { "healthPoints must be greater than zero" }

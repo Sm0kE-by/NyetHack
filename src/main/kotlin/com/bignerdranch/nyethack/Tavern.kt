@@ -1,5 +1,7 @@
 package org.example.com.bignerdranch.nyethack
 
+import com.bignerdranch.nyethack.Key
+import com.bignerdranch.nyethack.LootBox
 import com.bignerdranch.nyethack.Room
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -43,9 +45,13 @@ class Tavern : Room(TAVERN_NAME) {
             player.name to 4.50,
             *patrons.map { it to 6.00 }.toTypedArray()
         )
+
     //Выбираем случайное блюдо дня
     val itemOfDay = patrons.flatMap { getFavoriteMenuItems(it) }.random()
     override val status = "Busy"
+    override val lootBox: LootBox<Key> = LootBox(Key("key to Nogartse's evil lair"))
+
+
     override fun enterRoom() {
         narrate("${player.name} enters $TAVERN_NAME")
         narrate("\nThere are several items for sale:")
@@ -57,7 +63,7 @@ class Tavern : Room(TAVERN_NAME) {
 
         println(patronGold)
 
-            placeOrder(patrons.random(), menuItems.random())
+        placeOrder(patrons.random(), menuItems.random())
 
 
 //        displayPatronBalances(patronGold)

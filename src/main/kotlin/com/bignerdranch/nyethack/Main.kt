@@ -96,6 +96,35 @@ object Game {
         }
     }
 
+    fun takeLoot() {
+        val loot = currentRoom.lootBox.takeLoot()
+        if (loot == null) {
+            narrate("${player.name} approaches the loot box, but it is empty")
+        } else {
+            narrate("${player.name} now has a ${loot.name}")
+            player.inventory += loot
+        }
+    }
+
+    fun sellLoot() {
+        when (val currentRoom = currentRoom) {
+            is TownSquare -> {
+                player.inventory.forEach { item ->
+                    if (item is Sellable) {
+                        val sellPrice = currentRoom.sellLoot(item)
+                        narrate("Sold ${item.name} for $sellPrice gold")
+                        player.gold += sellPrice
+                    } else {
+                        narrate("Your ${item.name} can't be sold")
+                    }
+                }
+                player.inventory.removeAll { it is Sellable }
+            }
+
+            else -> narrate("You cannot sell anything here")
+        }
+    }
+
     private class GameInput(arg: String?) {
         private val input = arg ?: ""
         val command = input.split(" ")[0]
@@ -112,6 +141,20 @@ object Game {
                 }
             }
 
+            "take" -> {
+                if (argument.equals("loot", ignoreCase = true)) {
+                    takeLoot()
+                } else {
+                    narrate("I don't know what you're trying to take")
+                }
+            }
+            "sell" -> {
+                if (argument.equals("loot", ignoreCase = true)) {
+                    sellLoot()
+                } else {
+                    narrate("I don't know what you're trying to sell")
+                }
+            }
             else -> narrate("I'm not sure what you're trying to do")
         }
     }
