@@ -1,17 +1,21 @@
 package org.example.com.bignerdranch.nyethack
 
+import com.bignerdranch.nyethack.Fightable
+
 class Player(
     initialName: String,
     val hometown: String = "Neversummer",
-    var healthPoints: Int,
+    override var healthPoints: Int,
     val isImmortal: Boolean
-) {
+) : Fightable {
 
-    var name = initialName
+   override var name = initialName
         get() = field.replaceFirstChar { it.uppercase() }
         private set(value) {
             field = value.trim()
         }
+    override val diceCount: Int = 3
+    override val diceSides: Int=4
 
     val title: String
         get() = when {
@@ -44,6 +48,12 @@ class Player(
     ) {
         if (name.equals("Jason", ignoreCase = true)) {
             healthPoints = 500
+        }
+    }
+
+    override fun takeDamage(damage: Int) {
+        if (!isImmortal) {
+            healthPoints -= damage
         }
     }
 
