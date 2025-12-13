@@ -9,7 +9,7 @@ fun main() {
     narrate("Welcome to NyetHack")
     val playerName = promptHeroName()
     player = Player(playerName)
-// changeNarratorMood()
+    changeNarratorMood()
 
     Game.play()
 
@@ -20,13 +20,11 @@ private fun promptHeroName(): String {
 // Выводит message желтым цветом
         "\u001b[33;1m$message\u001b[0m"
     }
-    /*val input = readLine()
+    val input = readLine()
     require(input != null && input.isNotEmpty()) {
     "The hero must have a name."
     }
-    return input*/
-    println("Madrigal")
-    return "Madrigal"
+    return input
 }
 
 // Выводит сообщение желтым цветом
@@ -61,15 +59,14 @@ object Game {
     }
 
     fun move(direction: Direction) {
-        val newPosition = direction.updateCoordinate(currentPosition)
-        val newRoom = worldMap.getOrNull(newPosition.y)?.getOrNull(newPosition.x)
-        if (newRoom != null) {
+//        val newPosition = direction.updateCoordinate(currentPosition)
+        val newPosition = currentPosition move
+                direction
+        val newRoom = worldMap[newPosition].orEmptyRoom()
+
             narrate("The hero moves ${direction.name}")
             currentPosition = newPosition
             currentRoom = newRoom
-        } else {
-            narrate("You cannot move ${direction.name}")
-        }
     }
 
     fun fight() {
@@ -80,13 +77,22 @@ object Game {
             narrate("There's nothing to fight here")
             return
         }
+
+        var combatRound = 0
+        val previousNarrationModifier = narrationModifier
+        narrationModifier = {
+            it.addEnthusiasm(enthusiasmLevel = combatRound)
+        }
+
         while (player.healthPoints > 0 && currentMonster.healthPoints > 0) {
+            combatRound++
             player.attack(currentMonster)
             if (currentMonster.healthPoints > 0) {
                 currentMonster.attack(player)
             }
             Thread.sleep(1000)
         }
+        narrationModifier = previousNarrationModifier
         if (player.healthPoints <= 0) {
             narrate("You have been defeated! Thanks for playing")
             exitProcess(0)
@@ -95,6 +101,7 @@ object Game {
             monsterRoom.monster = null
         }
     }
+
 
     fun takeLoot() {
         val loot = currentRoom.lootBox.takeLoot()
@@ -148,6 +155,7 @@ object Game {
                     narrate("I don't know what you're trying to take")
                 }
             }
+
             "sell" -> {
                 if (argument.equals("loot", ignoreCase = true)) {
                     sellLoot()
@@ -155,6 +163,7 @@ object Game {
                     narrate("I don't know what you're trying to sell")
                 }
             }
+
             else -> narrate("I'm not sure what you're trying to do")
         }
     }

@@ -2,6 +2,7 @@ package org.example.com.bignerdranch.nyethack
 
 import com.bignerdranch.nyethack.Fightable
 import com.bignerdranch.nyethack.Loot
+import com.bignerdranch.nyethack.numVowels
 
 class Player(
     initialName: String,
@@ -22,7 +23,8 @@ class Player(
         get() = when {
             name.all { it.isDigit() } -> "The Identifiable"
             name.none { it.isLetter() } -> "The Witness Protection Member"
-            name.count { it.lowercase() in "aeiou" } > 4 -> "The Master of Vowels"
+            //name.count { it.lowercase() in "aeiou" } > 4 -> "The Master of Vowels"
+            name.numVowels > 4 -> "The Master of Vowels"
             else -> "The Renowned Hero"
         }
     val prophecy by lazy {
